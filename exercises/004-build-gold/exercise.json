@@ -1,0 +1,30 @@
+{
+  "id": "004-build-gold",
+  "title": "Build a customer revenue mart",
+  "description": "Give the business a table it can use.",
+  "stage": "gold",
+  "minutes": 10,
+  "difficulty": 2,
+  "intro": "The Silver order table is already typed and ready. Build a small Gold mart that answers a simple question: how many orders has each customer placed, and how much have they spent?",
+  "topics": ["aggregation", "GROUP BY", "business marts"],
+  "objectives": [
+    "Create gold_customer_revenue from silver_orders.",
+    "Produce one row per customer_id.",
+    "Include order_count and total_revenue.",
+    "Keep monetary values exact using the existing DECIMAL amount."
+  ],
+  "hints": [
+    "Group by customer_id, count the orders, and sum amount.",
+    "Use COUNT(*) AS order_count and SUM(amount) AS total_revenue."
+  ],
+  "target": "gold_customer_revenue",
+  "fixtures": [
+    {
+      "file": "orders.json",
+      "format": "json",
+      "columns": ["order_id", "customer_id", "amount"],
+      "table": "bronze_orders"
+    }
+  ],
+  "setup": "CREATE TABLE silver_orders AS SELECT CAST(order_id AS BIGINT) AS order_id, CAST(customer_id AS BIGINT) AS customer_id, CAST(amount AS DECIMAL(12,2)) AS amount FROM bronze_orders;"
+}

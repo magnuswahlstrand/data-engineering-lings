@@ -1,0 +1,27 @@
+{
+  "id": "001-load-csv",
+  "title": "Load your first CSV",
+  "description": "Every pipeline starts with a little raw data.",
+  "stage": "bronze",
+  "minutes": 5,
+  "difficulty": 1,
+  "intro": "A customer export just landed. Bring it into the Bronze layer exactly as it arrived. No cleaning, no clever transformations \u2014 yet.",
+  "topics": ["ingestion", "CSV", "bronze"],
+  "objectives": [
+    "Create a table named bronze_customers from customers.csv.",
+    "Keep all four columns as VARCHAR (raw text).",
+    "Preserve all 3 rows, including whitespace and duplicates."
+  ],
+  "hints": [
+    "Use CREATE OR REPLACE TABLE \u2026 AS SELECT \u2026 to make your query rerunnable.",
+    "DuckDB reads files with read_csv('customers.csv', header = true, all_varchar = true)."
+  ],
+  "target": "bronze_customers",
+  "fixtures": [
+    {
+      "file": "customers.csv",
+      "format": "csv",
+      "columns": ["customer_id", "name", "email", "updated_at"]
+    }
+  ]
+}

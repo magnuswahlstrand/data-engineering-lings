@@ -1,0 +1,29 @@
+{
+  "id": "003-deduplicate-records",
+  "title": "Keep the latest record",
+  "description": "One customer. One current source of truth.",
+  "stage": "silver",
+  "minutes": 15,
+  "difficulty": 2,
+  "intro": "Exports overlap. Customers change. Build a clean customer table that retains only the most recent record for each customer, using the source update time.",
+  "topics": ["deduplication", "window functions", "timestamps"],
+  "objectives": [
+    "Create silver_customers with one row per customer_id.",
+    "Use BIGINT IDs, trimmed names, lowercase emails, and TIMESTAMP update times.",
+    "Keep the record with the latest updated_at for each customer.",
+    "Return only customer_id, name, email, and updated_at."
+  ],
+  "hints": [
+    "ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY updated_at DESC) ranks each customer\u2019s records.",
+    "Filter a ranked CTE to rn = 1, or use QUALIFY. Rank after converting types."
+  ],
+  "target": "silver_customers",
+  "fixtures": [
+    {
+      "file": "customers.csv",
+      "format": "csv",
+      "columns": ["customer_id", "name", "email", "updated_at"],
+      "table": "bronze_customers"
+    }
+  ]
+}

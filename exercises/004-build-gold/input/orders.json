@@ -1,0 +1,22 @@
+[
+  {
+    "order_id": "101",
+    "customer_id": "1",
+    "amount": "49.50"
+  },
+  {
+    "order_id": "102",
+    "customer_id": "1",
+    "amount": "20.50"
+  },
+  {
+    "order_id": "103",
+    "customer_id": "2",
+    "amount": "35.00"
+  },
+  {
+    "order_id": "104",
+    "customer_id": "2",
+    "amount": "15.00"
+  }
+]

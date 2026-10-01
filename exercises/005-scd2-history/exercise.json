@@ -1,0 +1,29 @@
+{
+  "id": "005-scd2-history",
+  "title": "Build SCD Type 2 history",
+  "description": "Remember what was true, and when.",
+  "stage": "silver",
+  "minutes": 20,
+  "difficulty": 3,
+  "intro": "Overwriting a customer loses their history. These snapshots each represent a change. Turn them into non-overlapping validity intervals so analysts can see a customer as they were at any point in time.",
+  "topics": ["SCD Type 2", "LEAD", "history"],
+  "objectives": [
+    "Create silver_customer_history with all 4 versions.",
+    "Use BIGINT customer_id, name, email, valid_from, valid_to, and is_current.",
+    "Set valid_from to the parsed updated_at and valid_to to the next update for that customer.",
+    "Use half-open intervals [valid_from, valid_to); the current row has NULL valid_to and TRUE is_current."
+  ],
+  "hints": [
+    "LEAD(updated_at) OVER (PARTITION BY customer_id ORDER BY updated_at) gives the next version\u2019s start.",
+    "Compute valid_to in a CTE, then use valid_to IS NULL AS is_current. Each fixture row is a distinct change."
+  ],
+  "target": "silver_customer_history",
+  "fixtures": [
+    {
+      "file": "snapshots.csv",
+      "format": "csv",
+      "columns": ["customer_id", "name", "email", "updated_at"],
+      "table": "bronze_customer_snapshots"
+    }
+  ]
+}

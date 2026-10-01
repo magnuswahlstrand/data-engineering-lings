@@ -1,0 +1,4 @@
+customer_id,name,email,updated_at
+1," Magnus ","MAGNUS@example.com","2026-09-01 10:00"
+1,"Magnus","magnus@example.com","2026-09-02 10:00"
+2,"Alice ","alice@example.com","2026-09-01 12:00"
