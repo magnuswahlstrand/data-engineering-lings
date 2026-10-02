@@ -22,12 +22,14 @@ export interface ExerciseMeta {
   intro: string;
   objectives: string[];
   hints: string[];
+  solutionExplanation?: string;
   target: string;
   fixtures: Fixture[];
   setup?: string;
 }
 export interface Exercise extends ExerciseMeta {
   starter: string;
+  solution: string;
   inputs: Record<string, string>;
   tests: Check[];
 }

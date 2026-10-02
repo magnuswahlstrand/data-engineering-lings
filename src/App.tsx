@@ -1,3 +1,4 @@
+import { readProgress, saveProgress } from "./runtime/progress";
 import { CheckComparison } from "./components/CheckComparison";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -33,12 +34,24 @@ import { SqlEditor } from "./components/SqlEditor";
 import { DataTable } from "./components/DataTable";
 const empty: QueryResult = { columns: [], rows: [] };
 export default function App() {
-  const [index, setIndex] = useState(0);
+  const [initial] = useState(() => readProgress(exercises.map((ex) => ex.id)));
+  const [index, setIndex] = useState(() =>
+    Math.max(
+      0,
+      exercises.findIndex((ex) => ex.id === initial.currentId),
+    ),
+  );
   const exercise = exercises[index];
-  const [sql, setSql] = useState(exercise.starter);
-  const drafts = useRef<Record<string, string>>({});
-  const [completed, setCompleted] = useState<Set<string>>(new Set());
-  const [attempted, setAttempted] = useState<Set<string>>(new Set());
+  const [sql, setSql] = useState(
+    initial.drafts[exercise.id] ?? exercise.starter,
+  );
+  const drafts = useRef<Record<string, string>>({ ...initial.drafts });
+  const [completed, setCompleted] = useState<Set<string>>(
+    new Set(initial.completed),
+  );
+  const [attempted, setAttempted] = useState<Set<string>>(
+    new Set(initial.attempted),
+  );
   const [schema, setSchema] = useState<Schema>({});
   const [result, setResult] = useState<QueryResult>(empty);
   const [checks, setChecks] = useState<TestResult[]>([]);
@@ -54,6 +67,19 @@ export default function App() {
   const [brief, setBrief] = useState<"instructions" | "source">("instructions");
   const [source, setSource] = useState(0);
   const [hint, setHint] = useState(0);
+  const [solutionRevealed, setSolutionRevealed] = useState(false);
+  const [storageAvailable, setStorageAvailable] = useState(true);
+  useEffect(() => {
+    setStorageAvailable(
+      saveProgress({
+        version: 1,
+        drafts: drafts.current,
+        completed: [...completed],
+        attempted: [...attempted],
+        currentId: exercise.id,
+      }),
+    );
+  }, [sql, completed, attempted, exercise.id]);
   const [table, setTable] = useState("");
   const [tableData, setTableData] = useState<QueryResult>(empty);
   const [showGuide, setShowGuide] = useState(false);
@@ -105,6 +131,7 @@ export default function App() {
     setTableData(empty);
     setMs(undefined);
     setHint(0);
+    setSolutionRevealed(false);
     setSource(0);
     setOutput("results");
     const target = exercises[next];
@@ -113,6 +140,11 @@ export default function App() {
     );
     if (reset) {
       delete drafts.current[target.id];
+      setAttempted((old) => {
+        const next = new Set(old);
+        next.delete(target.id);
+        return next;
+      });
       setCompleted((old) => {
         const copy = new Set(old);
         copy.delete(target.id);
@@ -132,7 +164,7 @@ export default function App() {
     }
   }
   useEffect(() => {
-    void load(0);
+    void load(index);
   }, []);
   function changeSql(value: string) {
     setSql(value);
@@ -164,17 +196,12 @@ export default function App() {
       setCompleted((old) => {
         const next = new Set(old);
         if (data.tests.every((t) => t.passed)) next.add(exercise.id);
-        else next.delete(exercise.id);
+
         return next;
       });
     } catch (e) {
       setError(String(e));
       setOutput("results");
-      setCompleted((old) => {
-        const next = new Set(old);
-        next.delete(exercise.id);
-        return next;
-      });
       try {
         setSchema(await (await getRuntime()).schema());
       } catch {
@@ -276,6 +303,12 @@ export default function App() {
         <button className="sidebar-guide" onClick={() => setShowGuide(true)}>
           <BookOpen size={16} /> Field guide <ArrowUpRight size={14} />
         </button>
+        {!storageAvailable && (
+          <p className="storage-warning" role="status">
+            Browser storage is unavailable. Your work will last only for this
+            session.
+          </p>
+        )}
         <div className="sidebar-bottom">
           <span className="local-dot" /> No account. Just curiosity.
         </div>
@@ -432,6 +465,44 @@ export default function App() {
                             One more hint <ArrowRight size={12} />
                           </button>
                         )}
+                        {hint >= exercise.hints.length && (
+                          <div className="solution-reveal">
+                            <button
+                              className="text-button"
+                              onClick={() =>
+                                setSolutionRevealed(!solutionRevealed)
+                              }
+                              aria-expanded={solutionRevealed}
+                            >
+                              {solutionRevealed
+                                ? "Hide solution"
+                                : "Reveal solution"}{" "}
+                              <Code2 size={14} />
+                            </button>
+                            {solutionRevealed && (
+                              <div className="solution-content">
+                                <p>
+                                  {exercise.solutionExplanation ??
+                                    "One way to satisfy the exercise. Copy it to the editor, explore it, and run the checks."}
+                                </p>
+                                <pre aria-label="Reference solution">
+                                  <code>{exercise.solution}</code>
+                                </pre>
+                                <button
+                                  className="run-button"
+                                  disabled={busy}
+                                  onClick={() => changeSql(exercise.solution)}
+                                >
+                                  Copy to editor
+                                </button>
+                                <p className="solution-note">
+                                  Replaces your draft. Run &amp; check to
+                                  complete the exercise.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -486,7 +557,11 @@ export default function App() {
                     <span>workspace.sql</span>
                     <span
                       className="unsaved-dot"
-                      title="Session-only workspace"
+                      title={
+                        storageAvailable
+                          ? "Draft saved in this browser"
+                          : "Draft available only in this session"
+                      }
                     />
                   </div>
                   <button
@@ -818,8 +893,8 @@ export default function App() {
             <RotateCcw size={26} />
             <h2 id="reset-title">A fresh start?</h2>
             <p>
-              Reset this exercise’s SQL, tables, and checks to the starter. Your
-              other exercises stay as they are.
+              Reset this exercise’s saved SQL, completion, tables, and checks to
+              the starter. Your other exercises stay as they are.
             </p>
             <div className="modal-actions">
               <button onClick={() => setResetPrompt(false)}>
@@ -876,10 +951,12 @@ export default function App() {
               <p>Shape dependable data into business answers.</p>
             </div>
             <div className="guide-tip">
-              <strong>Your work lives in this session.</strong> Switching
-              exercises keeps your SQL draft and rebuilds the data. Refreshing
-              the page starts fresh. Run with ⌘/Ctrl + Enter; autocomplete with
-              Ctrl + Space.
+              <strong>Your progress is saved in this browser.</strong> Drafts
+              and completed exercises survive a refresh. Switching exercises
+              rebuilds the data; run your saved SQL to recreate its tables.
+              Reset clears that exercise’s saved progress. Browser data clearing
+              removes all saved progress. Run with ⌘/Ctrl + Enter; autocomplete
+              with Ctrl + Space.
             </div>
             <a
               href="https://duckdb.org/docs/stable/sql/introduction"

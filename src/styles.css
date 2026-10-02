@@ -1727,3 +1727,29 @@ tbody tr:last-child td {
     grid-template-columns: 1fr;
   }
 }
+.solution-reveal {
+  border-top: 1px solid #e2e7d7;
+  padding-top: 14px;
+  margin-top: 16px;
+}
+.solution-content pre {
+  max-height: 340px;
+  overflow: auto;
+  padding: 12px;
+  background: #f2f5eb;
+  border: 1px solid #dce5d2;
+  border-radius: 5px;
+  font-size: 10px;
+  line-height: 1.8;
+  color: #425d35;
+}
+.solution-content .solution-note {
+  font-size: 10px;
+}
+.storage-warning {
+  font-size: 10px;
+  color: #94632e;
+  padding: 8px;
+  background: #fff4e2;
+  border-radius: 4px;
+}

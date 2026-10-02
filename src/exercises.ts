@@ -8,6 +8,11 @@ const starters = import.meta.glob<string>("../exercises/*/starter.sql", {
   query: "?raw",
   import: "default",
 });
+const solutions = import.meta.glob<string>("../exercises/*/solution.sql", {
+  eager: true,
+  query: "?raw",
+  import: "default",
+});
 const inputs = import.meta.glob<string>("../exercises/*/input/*", {
   eager: true,
   query: "?raw",
@@ -21,9 +26,10 @@ export const exercises: Exercise[] = Object.entries(metadata)
   .map(([path, meta]) => {
     const dir = path.replace("/exercise.json", "");
     const starter = starters[`${dir}/starter.sql`];
+    const solution = solutions[`${dir}/solution.sql`];
     const checks = tests[`${dir}/tests.ts`];
-    if (!starter || !checks?.length)
-      throw new Error(`Missing starter or tests for ${meta.id}`);
+    if (!starter || !solution || !checks?.length)
+      throw new Error(`Missing starter, solution or tests for ${meta.id}`);
     const files = Object.fromEntries(
       meta.fixtures.map((f) => {
         const source = inputs[`${dir}/input/${f.file}`];
@@ -32,6 +38,6 @@ export const exercises: Exercise[] = Object.entries(metadata)
         return [f.file, source];
       }),
     );
-    return { ...meta, starter, tests: checks, inputs: files };
+    return { ...meta, starter, solution, tests: checks, inputs: files };
   })
   .sort((a, b) => a.id.localeCompare(b.id));

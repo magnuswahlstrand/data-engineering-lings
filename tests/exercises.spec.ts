@@ -266,3 +266,116 @@ test("row diff highlights changed cells and completion prominently advances to t
     lessons[2].title,
   );
 });
+
+test("solutions require an explicit reveal and drafts/completion survive refresh and reset", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Run & check" })).toBeEnabled({
+    timeout: 60_000,
+  });
+  await expect(
+    page.getByRole("button", { name: "Reveal solution" }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "A nudge in the right direction" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Reveal solution" }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "One more hint" }).click();
+  await page.getByRole("button", { name: "Reveal solution" }).click();
+  await expect(page.getByLabel("Reference solution")).toContainText(
+    "all_varchar=true",
+  );
+  await expect(page.getByText("0 of 5 completed")).toBeVisible();
+  await page.getByRole("button", { name: "Copy to editor" }).click();
+  await expect(page.getByTestId("sql-editor")).toContainText(
+    "all_varchar=true",
+  );
+  await expect(page.getByText("0 of 5 completed")).toBeVisible();
+  await run(page);
+  await expect(page.getByText("1 of 5 completed")).toBeVisible();
+  // Deleting every character is a valid saved draft, not an absent draft.
+  await setSql(page, "");
+  await page
+    .getByRole("navigation", { name: "Exercises" })
+    .getByRole("button")
+    .nth(1)
+    .click();
+  await expect(page.getByRole("button", { name: "Run & check" })).toBeEnabled();
+  await setSql(page, "-- my unfinished cleaning query\nSELECT 42;");
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Run & check" })).toBeEnabled({
+    timeout: 60_000,
+  });
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(
+    lessons[1].title,
+  );
+  await expect(page.getByTestId("sql-editor")).toContainText(
+    "my unfinished cleaning query",
+  );
+  await expect(page.getByText("1 of 5 completed")).toBeVisible();
+  await page
+    .getByRole("navigation", { name: "Exercises" })
+    .getByRole("button")
+    .nth(0)
+    .click();
+  await expect(page.getByTestId("sql-editor")).toHaveText("");
+  await expect(page.getByLabel("Reference solution")).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Reset exercise", exact: true })
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Reset exercise", exact: true })
+    .click();
+  await expect(page.getByRole("button", { name: "Run & check" })).toBeEnabled();
+  await expect(page.getByText("0 of 5 completed")).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Run & check" })).toBeEnabled({
+    timeout: 60_000,
+  });
+  await expect(page.getByTestId("sql-editor")).toContainText(
+    "Your first landing zone",
+  );
+  await expect(page.getByText("0 of 5 completed")).toBeVisible();
+  await page
+    .getByRole("navigation", { name: "Exercises" })
+    .getByRole("button")
+    .nth(1)
+    .click();
+  await expect(page.getByTestId("sql-editor")).toContainText(
+    "my unfinished cleaning query",
+  );
+});
+
+test("invalid or unavailable browser storage does not prevent learning", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("de-lings:progress:v1", "{broken"),
+  );
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Run & check" })).toBeEnabled({
+    timeout: 60_000,
+  });
+  await expect(page.getByText("0 of 5 completed")).toBeVisible();
+  await page.addInitScript(() => {
+    Storage.prototype.setItem = () => {
+      throw new Error("Storage unavailable");
+    };
+    Storage.prototype.getItem = () => {
+      throw new Error("Storage unavailable");
+    };
+  });
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Run & check" })).toBeEnabled({
+    timeout: 60_000,
+  });
+  await expect(
+    page.getByText("Browser storage is unavailable.", { exact: false }),
+  ).toBeVisible();
+  await run(page);
+  await expect(page.getByText(/checks passed. Keep going/)).toBeVisible();
+});

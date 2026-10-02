@@ -23,5 +23,6 @@
       "format": "csv",
       "columns": ["customer_id", "name", "email", "updated_at"]
     }
-  ]
+  ],
+  "solutionExplanation": "all_varchar preserves the original CSV values as text. CREATE OR REPLACE makes the load rerunnable without accumulating duplicates."
 }

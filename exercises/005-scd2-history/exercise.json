@@ -25,5 +25,6 @@
       "columns": ["customer_id", "name", "email", "updated_at"],
       "table": "bronze_customer_snapshots"
     }
-  ]
+  ],
+  "solutionExplanation": "LEAD finds the next version's start within each customer. That becomes the current version's exclusive end. The final version has no next start, so valid_to is NULL and is_current is true."
 }
